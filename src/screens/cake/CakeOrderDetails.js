@@ -8,11 +8,15 @@ import {
   Modal,
   TextInput,
   SafeAreaView,
+  TouchableOpacity,
+  ActivityIndicator,
+  Alert
 } from "react-native";
 import Header from "../../components/Header";
 import { Button } from "react-native-paper";
 import { RadioButton, Divider } from "react-native-paper";
 import { Picker } from "@react-native-picker/picker";
+import * as ImagePicker from "react-native-image-picker";
 
 const CakeOrderDetails = ({ route, navigation }) => {
   const { cakeOrder } = route.params;
@@ -21,6 +25,9 @@ const CakeOrderDetails = ({ route, navigation }) => {
   const [status, setStatus] = React.useState(formData?.status || "");
   const [boys, setBoys] = useState([]);
   const [deliveryBoy, setDeliveryBoy] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [selectedImage, setSelectedImage] = useState(null);
+const [dispatchImage, setDispatchImage] = useState(null)
 
   useEffect(() => {
     fetchBoys();
@@ -47,6 +54,60 @@ const CakeOrderDetails = ({ route, navigation }) => {
     }
   };
 
+  const handleImagePicker = () => {
+    const options = {
+      mediaType: "photo",
+      includeBase64: false,
+    };
+
+    ImagePicker.launchImageLibrary(options, (response) => {
+      if (!response.didCancel && !response.error) {
+        const selectedImage = {
+          uri: response.assets[0].uri,
+          name: response.assets[0].fileName,
+          type: response.assets[0].type,
+        };
+        setSelectedImage(selectedImage);
+      }
+    });
+  };
+
+  const handlePhotoUpload = async () => {
+    if (!selectedImage) {
+      Alert.alert("Error", "No image selected");
+      return;
+    }
+
+    setLoading(true);
+
+    const formData = new FormData();
+    formData.append("file", selectedImage);
+
+    try {
+      const response = await fetch(`https://cakebackend-mhv0ga23.b4a.run/fileUpload`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+        body: formData,
+      });
+
+      const responseText = await response.text();
+      const data = JSON.parse(responseText);
+      if (response.ok) {
+        setDispatchImage(data.data.url);
+      } else {
+        Alert.alert("Error", data.message || "Failed to upload photo");
+      }
+    } catch (error) {
+      Alert.alert("Error", error.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+
+console.log("fff", dispatchImage)
   console.log("boys", boys);
 
   const handleInputChange = (name, value) => {
@@ -54,7 +115,7 @@ const CakeOrderDetails = ({ route, navigation }) => {
   };
 
   const handleSave = async () => {
-    const updatedOrder = { ...formData, status, deliveryBoy };
+    const updatedOrder = { ...formData, status, deliveryBoy, dispatchImage };
     await updateOrder(updatedOrder);
     setModalVisible(false);
     navigation.goBack();
@@ -194,6 +255,17 @@ const CakeOrderDetails = ({ route, navigation }) => {
           <Text style={styles.detailItem}>
             <Text style={styles.label}>Agent Name:</Text> {cakeOrder.agentName}
           </Text>
+          <Text style={styles.detailItem}>
+          <Text style={styles.label}>Dispatch Image:</Text>
+        </Text>
+        {cakeOrder?.dispatchImage ? (
+          <Image
+            source={{ uri: cakeOrder.dispatchImage }}
+            style={styles.cakeImage}
+          />
+        ) : (
+          <ActivityIndicator size="large" color="#0000ff" />
+        )}
         </View>
         <Modal
           visible={isModalVisible}
@@ -320,6 +392,27 @@ const CakeOrderDetails = ({ route, navigation }) => {
 
                 <Text style={styles.selectedText}>Selected: {deliveryBoy}</Text>
               </View>
+              <View style={styles.step}>
+              <Text style={styles.subtitle}>Media</Text>
+              <TouchableOpacity style={styles.button} onPress={handleImagePicker}>
+                <Text style={styles.buttonText}>Choose Photo</Text>
+              </TouchableOpacity>
+              {selectedImage && (
+                <View style={styles.imageContainer}>
+                  <Image source={{ uri: selectedImage.uri }} style={styles.image} />
+                  <TouchableOpacity
+                    style={styles.button}
+                    onPress={handlePhotoUpload}
+                  >
+                    <Text style={styles.buttonText}>
+                      {loading ? "Uploading..." : "Upload Photo"}
+                    </Text>
+                  </TouchableOpacity>
+                  {loading && <ActivityIndicator size="small" color="#007BFF" />}
+                </View>
+              )}
+              <ScrollView horizontal></ScrollView>
+            </View>
             </ScrollView>
 
             <Button onPress={handleSave}>Save</Button>
@@ -338,7 +431,7 @@ const styles = StyleSheet.create({
   },
   cakeImage: {
     width: "100%",
-    height: 200,
+    height: 400,
     resizeMode: "cover",
   },
   detailsContainer: {
@@ -363,6 +456,37 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     marginBottom: 10,
     paddingHorizontal: 10,
+  },
+  step: {
+    padding: 20,
+  },
+  subtitle: {
+    fontSize: 18,
+    fontWeight: "bold",
+    marginTop: 20,
+    marginBottom: 10,
+  },
+  button: {
+    backgroundColor: "#007BFF",
+    padding: 10,
+    borderRadius: 5,
+    alignItems: "center",
+    marginBottom: 10,
+  },
+
+  image: {
+    width: 100,
+    height: 100,
+    marginRight: 10,
+    borderRadius: 5,
+  },
+  imageContainer: {
+    alignItems: "center",
+    marginBottom: 10,
+  },
+  picker: {
+    height: 50,
+    width: "100%",
   },
 });
 

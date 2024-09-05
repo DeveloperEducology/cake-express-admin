@@ -46,7 +46,7 @@ const CakeBookingList = ({ navigation }) => {
   const userPosts = async () => {
     try {
       const response = await fetch(
-        `https://cakebackend-mhv0ga23.b4a.run/orders/${userId}`,
+        `https://cakebackend-mhv0ga23.b4a.run/orders`,
         {
           method: "GET",
           headers: {
