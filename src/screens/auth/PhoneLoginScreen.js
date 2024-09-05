@@ -7,10 +7,12 @@ import {
   TouchableOpacity,
   StyleSheet,
   Alert,
+  Image,
+  ActivityIndicator,
 } from "react-native";
 import { getData, showError } from "../../utils/helperFunctions";
 import validator from "../../utils/validations";
-import { userLogin, userPhoneLogin } from "../../redux/actions/auth";
+import { userPhoneLogin } from "../../redux/actions/auth";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { saveUserData } from "../../redux/reducers/auth";
 import store from "../../redux/store";
@@ -20,7 +22,6 @@ const { dispatch } = store;
 const PhoneLoginScreen = ({ navigation }) => {
   const [phoneNumber, setPhoneNumber] = useState("");
   const [isLoading, setLoading] = useState(false);
-
 
   React.useEffect(() => {
     initUser();
@@ -48,6 +49,7 @@ const PhoneLoginScreen = ({ navigation }) => {
     }
     return true;
   };
+
   const onLogin = async () => {
     const checkValid = isValidData();
     if (checkValid) {
@@ -61,10 +63,7 @@ const PhoneLoginScreen = ({ navigation }) => {
         });
         console.log("login api res", res);
         setLoading(false);
-        // if (!!res.data) {
         navigation.navigate("otp", { data: res.data });
-        // return;
-        // }
       } catch (error) {
         console.log("error in login api", error);
         showError(error?.error);
@@ -75,9 +74,15 @@ const PhoneLoginScreen = ({ navigation }) => {
 
   return (
     <SafeAreaView style={styles.container}>
+      <Image
+      source={{uri: "https://pbs.twimg.com/profile_images/378800000676854536/af8e304449ad7edd4b46954adabb2732_400x400.png"}} // Replace with your logo
+        style={styles.image}
+      />
       <View style={styles.form}>
-        <Text style={styles.header}>Welcome Back</Text>
-        <Text style={styles.subHeader}>Enter your Phone Number to login</Text>
+        <Text style={styles.header}>Welcome Admin</Text>
+        <Text style={styles.subHeader}>
+          Enter your Phone Number to login
+        </Text>
 
         <TextInput
           style={styles.input}
@@ -85,19 +90,22 @@ const PhoneLoginScreen = ({ navigation }) => {
           keyboardType="phone-pad"
           value={phoneNumber}
           onChangeText={setPhoneNumber}
+          placeholderTextColor="#888"
         />
 
-        <TouchableOpacity style={styles.button} onPress={onLogin}>
-          <Text style={styles.buttonText}>Login</Text>
+        <TouchableOpacity
+          style={[styles.button, isLoading && styles.buttonDisabled]}
+          onPress={onLogin}
+          disabled={isLoading}
+        >
+          {isLoading ? (
+            <ActivityIndicator color="#fff" />
+          ) : (
+            <Text style={styles.buttonText}>Login</Text>
+          )}
         </TouchableOpacity>
 
-        <TouchableOpacity>
-          <Text style={styles.forgotText}>Forgot password?</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity onPress={() => navigation.navigate("register")}>
-          <Text style={styles.signupText}>Don't have an account? Sign Up</Text>
-        </TouchableOpacity>
+      
       </View>
     </SafeAreaView>
   );
@@ -106,12 +114,19 @@ const PhoneLoginScreen = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#fbdccf",
+    backgroundColor: "#f9f9f9",
     justifyContent: "center",
     alignItems: "center",
+    padding: 20,
+  },
+  image: {
+    width: 150,
+    height: 150,
+    resizeMode: "contain",
+    marginBottom: 20,
   },
   form: {
-    width: "90%",
+    width: "100%",
     backgroundColor: "#fff",
     borderRadius: 10,
     padding: 20,
@@ -124,10 +139,12 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontWeight: "bold",
     textAlign: "center",
+    color: "#333",
     marginBottom: 10,
   },
   subHeader: {
     fontSize: 16,
+    color: "#666",
     textAlign: "center",
     marginBottom: 20,
   },
@@ -138,29 +155,27 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     marginBottom: 15,
     fontSize: 16,
+    color: "#333",
   },
   button: {
-    backgroundColor: "#a050d0",
+    backgroundColor: "#007bff",
     padding: 15,
     borderRadius: 5,
     alignItems: "center",
   },
+  buttonDisabled: {
+    backgroundColor: "#a0a0a0",
+  },
   buttonText: {
     color: "#fff",
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: "bold",
-  },
-  forgotText: {
-    textAlign: "center",
-    marginTop: 10,
-    fontSize: 14,
-    color: "#6f42c1",
   },
   signupText: {
     textAlign: "center",
     marginTop: 20,
     fontSize: 16,
-    color: "#6f42c1",
+    color: "#007bff",
   },
 });
 
