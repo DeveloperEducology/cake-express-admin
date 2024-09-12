@@ -1,3 +1,4 @@
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import {
   FILE_UPLOAD,
   LOGIN_API,
@@ -136,6 +137,7 @@ export const otpVerify = (data, token = null) => {
           storeData("userData")
             .then((value) => {
               console.log("im here", res.data);
+
               dispatch(saveUserData(res.data));
               resolve(res);
             })

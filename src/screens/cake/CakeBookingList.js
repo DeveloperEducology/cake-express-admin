@@ -47,6 +47,7 @@ const CakeBookingList = ({ navigation }) => {
     try {
       const response = await fetch(
         `https://cakebackend-mhv0ga23.b4a.run/orders`,
+        // `http://192.168.29.124:3001/orders`,
         {
           method: "GET",
           headers: {
@@ -69,7 +70,7 @@ const CakeBookingList = ({ navigation }) => {
 
   const filterPostsByDate = () => {
     const selectedDate = moment(date).format("DD-MM-YYYY");
-    const filtered = posts.filter((post) => post.order_date === selectedDate);
+    const filtered = posts?.filter((post) => post.order_date === selectedDate);
     setFilteredPosts(filtered);
   };
 

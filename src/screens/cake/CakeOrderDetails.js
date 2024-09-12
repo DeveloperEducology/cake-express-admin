@@ -10,7 +10,7 @@ import {
   SafeAreaView,
   TouchableOpacity,
   ActivityIndicator,
-  Alert
+  Alert,
 } from "react-native";
 import Header from "../../components/Header";
 import { Button } from "react-native-paper";
@@ -25,9 +25,13 @@ const CakeOrderDetails = ({ route, navigation }) => {
   const [status, setStatus] = React.useState(formData?.status || "");
   const [boys, setBoys] = useState([]);
   const [deliveryBoy, setDeliveryBoy] = useState("");
+  const [dispatchImage, setDispatchImage] = useState("");
+  const [image, setImage] = useState("");
   const [loading, setLoading] = useState(false);
+
   const [selectedImage, setSelectedImage] = useState(null);
-const [dispatchImage, setDispatchImage] = useState(null)
+
+  console.log("cakeOrder", cakeOrder);
 
   useEffect(() => {
     fetchBoys();
@@ -35,12 +39,15 @@ const [dispatchImage, setDispatchImage] = useState(null)
 
   const fetchBoys = async () => {
     try {
-      const response = await fetch(`https://cakebackend-mhv0ga23.b4a.run/deliveryboys`, {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-        },
-      });
+      const response = await fetch(
+        `https://cakebackend-mhv0ga23.b4a.run/deliveryboys`,
+        {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
 
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
@@ -54,6 +61,8 @@ const [dispatchImage, setDispatchImage] = useState(null)
     }
   };
 
+  console.log("boys", boys);
+
   const handleImagePicker = () => {
     const options = {
       mediaType: "photo",
@@ -61,13 +70,19 @@ const [dispatchImage, setDispatchImage] = useState(null)
     };
 
     ImagePicker.launchImageLibrary(options, (response) => {
-      if (!response.didCancel && !response.error) {
+      if (
+        !response.didCancel &&
+        !response.error &&
+        response.assets.length > 0
+      ) {
         const selectedImage = {
           uri: response.assets[0].uri,
           name: response.assets[0].fileName,
           type: response.assets[0].type,
         };
         setSelectedImage(selectedImage);
+      } else if (response.error) {
+        Alert.alert("Error", "Failed to pick image: " + response.error);
       }
     });
   };
@@ -81,18 +96,26 @@ const [dispatchImage, setDispatchImage] = useState(null)
     setLoading(true);
 
     const formData = new FormData();
-    formData.append("file", selectedImage);
+    formData.append("file", {
+      uri: selectedImage.uri,
+      name: selectedImage.name || "photo.jpg", // Ensure name is set
+      type: selectedImage.type || "image/jpeg", // Ensure type is set
+    });
 
     try {
-      const response = await fetch(`https://cakebackend-mhv0ga23.b4a.run/fileUpload`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "multipart/form-data",
-        },
-        body: formData,
-      });
+      const response = await fetch(
+        `https://cakebackend-mhv0ga23.b4a.run/fileUpload`,
+        {
+          method: "POST",
+          headers: {
+            // "Content-Type": "multipart/form-data", // Let fetch handle this
+          },
+          body: formData,
+        }
+      );
 
       const responseText = await response.text();
+      console.log("Response:", responseText); // Logging the response for debugging
       const data = JSON.parse(responseText);
       if (response.ok) {
         setDispatchImage(data.data.url);
@@ -105,10 +128,6 @@ const [dispatchImage, setDispatchImage] = useState(null)
       setLoading(false);
     }
   };
-
-
-console.log("fff", dispatchImage)
-  console.log("boys", boys);
 
   const handleInputChange = (name, value) => {
     setFormData({ ...formData, [name]: value });
@@ -126,6 +145,7 @@ console.log("fff", dispatchImage)
     try {
       const response = await fetch(
         `https://cakebackend-mhv0ga23.b4a.run/orders/${orderId}`,
+        // `http://192.168.29.124:3001/orders/${orderId}`,
         {
           method: "PUT", // or "POST" if you are creating a new resource
           headers: {
@@ -145,6 +165,8 @@ console.log("fff", dispatchImage)
       console.error("Error updating order:", error);
     }
   };
+
+  console.log("lala", cakeOrder?.dispatchImage);
 
   return (
     <SafeAreaView style={styles.container}>
@@ -211,7 +233,7 @@ console.log("fff", dispatchImage)
           </Text>
           <Divider />
           <Text style={styles.detailItem}>
-            <Text style={styles.label}>Message on Card:</Text>{" "}
+            <Text style={styles.label}>Message on Cake:</Text>{" "}
             {cakeOrder.messageOnCard}
           </Text>
           <Divider />
@@ -251,21 +273,25 @@ console.log("fff", dispatchImage)
             <Text style={styles.label}>Delivery Status:</Text>{" "}
             {cakeOrder.status}
           </Text>
+          <Text style={styles.detailItem}>
+            <Text style={styles.label}>Delivery Status:</Text>{" "}
+            {cakeOrder?.paymentMethod}
+          </Text>
           <Divider />
           <Text style={styles.detailItem}>
             <Text style={styles.label}>Agent Name:</Text> {cakeOrder.agentName}
           </Text>
           <Text style={styles.detailItem}>
-          <Text style={styles.label}>Dispatch Image:</Text>
-        </Text>
-        {cakeOrder?.dispatchImage ? (
-          <Image
-            source={{ uri: cakeOrder.dispatchImage }}
-            style={styles.cakeImage}
-          />
-        ) : (
-          <ActivityIndicator size="large" color="#0000ff" />
-        )}
+            <Text style={styles.label}>Dispatch Image:</Text>
+          </Text>
+          {cakeOrder?.dispatchImage ? (
+            <Image
+              source={{ uri: cakeOrder.dispatchImage }}
+              style={styles.cakeImage}
+            />
+          ) : (
+            <ActivityIndicator size="large" color="#0000ff" />
+          )}
         </View>
         <Modal
           visible={isModalVisible}
@@ -393,26 +419,34 @@ console.log("fff", dispatchImage)
                 <Text style={styles.selectedText}>Selected: {deliveryBoy}</Text>
               </View>
               <View style={styles.step}>
-              <Text style={styles.subtitle}>Media</Text>
-              <TouchableOpacity style={styles.button} onPress={handleImagePicker}>
-                <Text style={styles.buttonText}>Choose Photo</Text>
-              </TouchableOpacity>
-              {selectedImage && (
-                <View style={styles.imageContainer}>
-                  <Image source={{ uri: selectedImage.uri }} style={styles.image} />
-                  <TouchableOpacity
-                    style={styles.button}
-                    onPress={handlePhotoUpload}
-                  >
-                    <Text style={styles.buttonText}>
-                      {loading ? "Uploading..." : "Upload Photo"}
-                    </Text>
-                  </TouchableOpacity>
-                  {loading && <ActivityIndicator size="small" color="#007BFF" />}
-                </View>
-              )}
-              <ScrollView horizontal></ScrollView>
-            </View>
+                <Text style={styles.subtitle}>Media</Text>
+                <TouchableOpacity
+                  style={styles.button}
+                  onPress={handleImagePicker}
+                >
+                  <Text style={styles.buttonText}>Choose Photo</Text>
+                </TouchableOpacity>
+                {selectedImage && (
+                  <View style={styles.imageContainer}>
+                    <Image
+                      source={{ uri: selectedImage.uri }}
+                      style={styles.image}
+                    />
+                    <TouchableOpacity
+                      style={styles.button}
+                      onPress={handlePhotoUpload}
+                    >
+                      <Text style={styles.buttonText}>
+                        {loading ? "Uploading..." : "Upload Photo"}
+                      </Text>
+                    </TouchableOpacity>
+                    {loading && (
+                      <ActivityIndicator size="small" color="#007BFF" />
+                    )}
+                  </View>
+                )}
+                <ScrollView horizontal></ScrollView>
+              </View>
             </ScrollView>
 
             <Button onPress={handleSave}>Save</Button>
@@ -431,7 +465,7 @@ const styles = StyleSheet.create({
   },
   cakeImage: {
     width: "100%",
-    height: 400,
+    height: 300,
     resizeMode: "cover",
   },
   detailsContainer: {

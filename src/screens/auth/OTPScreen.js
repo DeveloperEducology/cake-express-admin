@@ -31,7 +31,6 @@ const OTPScreen = ({ route, navigation }) => {
         otp: enteredOtp,
         phoneNumber,
       });
-      // Handle successful verification
       setLoading(false);
       Alert.alert("Success", "OTP verified successfully", [
         { text: "OK" },

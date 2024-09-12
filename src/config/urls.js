@@ -1,5 +1,5 @@
-// export const API_BASE_URL = "http://192.168.29.247:3001";
-export const API_BASE_URL = "https://cakebackend-mhv0ga23.b4a.run";
+export const API_BASE_URL = "http://192.168.29.124:3001";
+// export const API_BASE_URL = "https://cakebackend-mhv0ga23.b4a.run";
 
 export const getApiURL = (endpoint) => API_BASE_URL + endpoint;
 

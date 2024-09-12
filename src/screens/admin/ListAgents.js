@@ -45,10 +45,10 @@ const ListAgents = ({ navigation }) => {
 
   console.log("boys data in list agent", boys);
 
-  const handleDelete = async (bookingId) => {
+  const handleDelete = async (id) => {
     try {
       const response = await fetch(
-        `https://cakebackend-mhv0ga23.b4a.run/delete-order/${bookingId}`,
+        `https://cakebackend-mhv0ga23.b4a.run/delete-agent/${id}`,
         {
           method: "DELETE",
           headers: {

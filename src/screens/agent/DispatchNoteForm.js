@@ -16,7 +16,7 @@ import { Button } from "react-native-paper";
 import { useSelector } from "react-redux";
 import moment from "moment";
 import * as ImagePicker from "react-native-image-picker";
-import { launchImageLibrary } from "react-native-image-picker";
+import { Picker } from "@react-native-picker/picker";
 
 export default function DispatchNoteForm({ navigation, onFormSuccess }) {
   const userData = useSelector((state) => state?.auth?.userData);
@@ -26,12 +26,11 @@ export default function DispatchNoteForm({ navigation, onFormSuccess }) {
   const userId = userData?._id;
   const agentName = userData?.name;
   const [image, setImage] = React.useState(null);
-  const [imageUri, setImageUri] = useState(null);
-  const [value, setValue] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [source, setSource] = useState("");
+  const [paymentMethod, setPaymentMethod] = useState("");
   const agentId = userId;
   console.log(date);
-  const [user, setUser] = useState("");
 
   const [selectedImage, setSelectedImage] = useState(null);
 
@@ -42,18 +41,24 @@ export default function DispatchNoteForm({ navigation, onFormSuccess }) {
     };
 
     ImagePicker.launchImageLibrary(options, (response) => {
-      if (!response.didCancel && !response.error) {
+      if (
+        !response.didCancel &&
+        !response.error &&
+        response.assets.length > 0
+      ) {
         const selectedImage = {
           uri: response.assets[0].uri,
           name: response.assets[0].fileName,
           type: response.assets[0].type,
         };
         setSelectedImage(selectedImage);
+      } else if (response.error) {
+        Alert.alert("Error", "Failed to pick image: " + response.error);
       }
     });
   };
 
-console.log("image", image)
+  console.log("image", image);
 
   const handlePhotoUpload = async () => {
     if (!selectedImage) {
@@ -64,18 +69,26 @@ console.log("image", image)
     setLoading(true);
 
     const formData = new FormData();
-    formData.append("file", selectedImage);
+    formData.append("file", {
+      uri: selectedImage.uri,
+      name: selectedImage.name || "photo.jpg", // Ensure name is set
+      type: selectedImage.type || "image/jpeg", // Ensure type is set
+    });
 
     try {
-      const response = await fetch(`https://cakebackend-mhv0ga23.b4a.run/fileUpload`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "multipart/form-data",
-        },
-        body: formData,
-      });
+      const response = await fetch(
+        `https://cakebackend-mhv0ga23.b4a.run/fileUpload`,
+        {
+          method: "POST",
+          headers: {
+            // "Content-Type": "multipart/form-data", // Let fetch handle this
+          },
+          body: formData,
+        }
+      );
 
       const responseText = await response.text();
+      console.log("Response:", responseText); // Logging the response for debugging
       const data = JSON.parse(responseText);
       if (response.ok) {
         setImage(data.data.url);
@@ -103,13 +116,16 @@ console.log("image", image)
       agentName,
       agentId,
       image, // Include the image as base64
+      paymentMethod,
+      source,
     };
     console.log("Submitting form data:", formData);
 
     const handleCreate = async () => {
       try {
         const response = await fetch(
-          `https://cakebackend-mhv0ga23.b4a.run/create-order`,
+          // `https://cakebackend-mhv0ga23.b4a.run/create-order`,
+          `http://192.168.29.124:3001/create-order`,
           {
             method: "POST",
             headers: {
@@ -427,6 +443,27 @@ console.log("image", image)
             />
           )}
         />
+
+        <Picker
+          selectedValue={source}
+          style={styles.input}
+          onValueChange={(itemValue, itemIndex) => setSource(itemValue)}
+        >
+          <Picker.Item label="Select source" value="" />
+          <Picker.Item label="Store" value="store" />
+          <Picker.Item label="Instagram" value="insta" />
+          <Picker.Item label="Phone Order" value="phoneorder" />
+          <Picker.Item label="Others" value="others" />
+        </Picker>
+        <Picker
+          selectedValue={paymentMethod}
+          style={styles.input}
+          onValueChange={(itemValue, itemIndex) => setPaymentMethod(itemValue)}
+        >
+          <Picker.Item label="Select Payment Method" value="" />
+          <Picker.Item label="COD" value="cod" />
+          <Picker.Item label="UPI" value="upi" />
+        </Picker>
 
         <View style={styles.step}>
           <Text style={styles.subtitle}>Media</Text>
